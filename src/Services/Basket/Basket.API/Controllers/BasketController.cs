@@ -1,6 +1,7 @@
 ﻿using Basket.API.Entities;
 using Basket.API.Repository;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -12,9 +13,9 @@ namespace Basket.API.Controllers
     {
         private readonly IBasketRepository basketRepository;
 
-        public BasketController(IBasketRepository basketRepository)
+        public BasketController(Func<BasketType, IBasketRepository> basketRepositoryDelegate)
         {
-            this.basketRepository = basketRepository;
+            this.basketRepository = basketRepositoryDelegate(BasketType.WithDiscount);
         }
 
         [HttpGet("{userName}", Name = "GetBasket")]
