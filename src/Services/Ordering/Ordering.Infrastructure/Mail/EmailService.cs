@@ -12,9 +12,9 @@ namespace Ordering.Infrastructure.Mail
     public class EmailService : IEmailService
     {
         public EmailSettings EmailSettings { get; }
-        public ILogger Logger { get; }
+        public ILogger<EmailService> Logger { get; }
 
-        public EmailService(IOptions<EmailSettings> emailSettings, ILogger logger)
+        public EmailService(IOptions<EmailSettings> emailSettings, ILogger<EmailService> logger)
         {
             this.EmailSettings = emailSettings.Value;
             this.Logger        = logger;
