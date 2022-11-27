@@ -29,9 +29,12 @@ namespace Ordering.Application.Behaviours
 
                 var validationResults = await Task.WhenAll(this.validators.Select(v => v.ValidateAsync(context)));
 
-                var failures = validationResults.SelectMany(e => e.Errors).Where(f => f != null).ToList();
+                var failures = validationResults
+                    .SelectMany(e => e.Errors)
+                    .Where(f => f != null)
+                    .ToList();
 
-                if (true)
+                if (failures.Count != 0)
                 {
                     throw new ValidationException();
                 }
