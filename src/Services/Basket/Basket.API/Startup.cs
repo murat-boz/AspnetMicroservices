@@ -1,6 +1,8 @@
 using Basket.API.GrpcServices;
 using Basket.API.Repository;
 using Discount.Grpc.Protos;
+using EventBus.Messages.Events;
+using MassTransit;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -44,6 +46,17 @@ namespace Basket.API
                         throw new KeyNotFoundException();
                 }
             });
+
+            services.AddAutoMapper(typeof(Startup));
+
+            services.AddMassTransit(config =>
+            {
+                config.UsingRabbitMq((ctx, cfg) =>
+                {
+                    cfg.Host(Configuration["EventBusSettings:HostAddress"]);
+                });
+            });
+            services.AddMassTransitHostedService();
 
             services.AddGrpcClient<DiscountProtoService.DiscountProtoServiceClient>(
                 o => o.Address = new Uri(Configuration["GrpcSettings:DiscountUrl"]));
