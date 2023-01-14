@@ -3,16 +3,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using Polly;
+using System;
 using System.Threading;
 
 namespace Discount.Grpc.Extensions
 {
     public static class HostExtensions
     {
-        public static IHost MigrateDatabase<TContext>(this IHost host, int? retry = 0)
+        public static IHost MigrateDatabase<TContext>(this IHost host)
         {
-            int retryForAvailability = retry.Value;
-
             using (var scope = host.Services.CreateScope())
             {
                 var services      = scope.ServiceProvider;
@@ -23,20 +23,22 @@ namespace Discount.Grpc.Extensions
                 {
                     logger.LogInformation("Migrating postresql database.");
 
-                    ExecuteMigrations(configuration);
+                    var retry = Policy.Handle<NpgsqlException>()
+                       .WaitAndRetry(
+                           retryCount           : 5,
+                           sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                           onRetry              : (exception, retryCount, context) =>
+                           {
+                               logger.LogError($"Retry {retryCount} of {context.PolicyKey} at {context.OperationKey}, due to: {exception}.");
+                           });
+
+                    retry.Execute(() => ExecuteMigrations(configuration));
 
                     logger.LogInformation("Migrated postresql database.");
                 }
                 catch (NpgsqlException ex)
                 {
                     logger.LogError(ex, "An error occurred while migrating the postresql database");
-
-                    if (retryForAvailability < 50)
-                    {
-                        retryForAvailability++;
-                        Thread.Sleep(2000);
-                        MigrateDatabase<TContext>(host, retryForAvailability);
-                    }
                 }
             }
 
