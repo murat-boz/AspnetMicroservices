@@ -8,13 +8,14 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
 COPY ["WebApps/AspnetRunBasics/AspnetRunBasics.csproj", "WebApps/AspnetRunBasics/"]
+COPY ["BuildingBlocks/Common.Logging/Common.Logging.csproj", "BuildingBlocks/Common.Logging/"]
 RUN dotnet restore "WebApps/AspnetRunBasics/AspnetRunBasics.csproj"
 COPY . .
 WORKDIR "/src/WebApps/AspnetRunBasics"
 RUN dotnet build "AspnetRunBasics.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "AspnetRunBasics.csproj" -c Release -o /app/publish
+RUN dotnet publish "AspnetRunBasics.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
