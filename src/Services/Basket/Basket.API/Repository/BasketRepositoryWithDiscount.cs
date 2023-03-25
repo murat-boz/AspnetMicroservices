@@ -1,5 +1,6 @@
 ﻿using Basket.API.Entities;
 using Basket.API.GrpcServices;
+using RailwayExtensions;
 using System;
 using System.Threading.Tasks;
 
@@ -18,12 +19,12 @@ namespace Basket.API.Repository
             this.discountGrpcService = discountGrpcService;
         }
 
-        public async Task<ShoppingCart> GetBasket(string userName)
+        public async Task<Result<ShoppingCart>> GetBasket(string userName)
         {
             return await this.basketRepository.GetBasket(userName);
         }
 
-        public async Task<ShoppingCart> UpdateBasket(ShoppingCart basket)
+        public async Task<Result<ShoppingCart>> UpdateBasket(ShoppingCart basket)
         {
             foreach (var item in basket.Items)
             {
@@ -32,12 +33,12 @@ namespace Basket.API.Repository
                 item.Price -= coupon.Amount;
             }
 
-            return await this.basketRepository.UpdateBasket(basket); ;
+            return await this.basketRepository.UpdateBasket(basket);
         }
 
-        public async Task DeleteBasket(string userName)
+        public async Task<Result> DeleteBasket(string userName)
         {
-            await this.basketRepository.DeleteBasket(userName);
+            return await this.basketRepository.DeleteBasket(userName);
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Basket.API.Entities;
 using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
+using RailwayExtensions;
 using System.Threading.Tasks;
 
 namespace Basket.API.Repository
@@ -14,28 +15,37 @@ namespace Basket.API.Repository
             this.redisCache = redisCache;
         }
 
-        public async Task<ShoppingCart> GetBasket(string userName)
+        public async Task<Result<ShoppingCart>> GetBasket(string userName)
         {
             var basket = await this.redisCache.GetStringAsync(userName);
 
             if (string.IsNullOrEmpty(basket))
             {
-                return null;
+                return Result.Failure<ShoppingCart>("Basket is empty");
             }
 
-            return JsonConvert.DeserializeObject<ShoppingCart>(basket);
+            return Result.Create(JsonConvert.DeserializeObject<ShoppingCart>(basket));
         }
 
-        public async Task<ShoppingCart> UpdateBasket(ShoppingCart basket)
+        public async Task<Result<ShoppingCart>> UpdateBasket(ShoppingCart basket)
         {
             await this.redisCache.SetStringAsync(basket.UserName, JsonConvert.SerializeObject(basket));
         
             return await this.GetBasket(basket.UserName);
         }
 
-        public async Task DeleteBasket(string userName)
+        public async Task<Result> DeleteBasket(string userName)
         {
-            await this.redisCache.RemoveAsync(userName);
+            try
+            {
+                await this.redisCache.RemoveAsync(userName);
+            }
+            catch (System.Exception ex)
+            {
+                return Result.Failure($"Redis error has been thrown. Error message: {ex.Message}");
+            }
+
+            return Result.Ok();
         }
     }
 }
